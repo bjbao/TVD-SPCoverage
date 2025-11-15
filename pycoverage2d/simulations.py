@@ -191,7 +191,6 @@ def run_sim(
         velocity = CoverageControl.calculateVelocities()
     CoverageControl.saveData(dir, seed, model, save_params)
 
-    # Call at end of script to print debug information and for your script to run on the Robotarium server properly
     cost = CoverageControl.cost_vec
     time = CoverageControl.t_vec
 
@@ -208,14 +207,20 @@ def run_sim(
         comments="",
     )
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    dpi = 600
+    fs = (3.5, 3.5)
+    fig = plt.figure(figsize=fs, dpi=dpi)
+    ax = fig.add_subplot(111)
     ax.plot(time, cost, label="Cost")
-    ax.legend(loc="best")
-    ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Cost")
-    ax.set_title(config)
+    plt.ylabel("Cost", fontsize=10)
+    plt.xlabel("Time (s)", fontsize=10)
+    plt.xlim((0, max(time)))
+    plt.ylim(bottom=0)
+    cost_val = sum(cost)
+    
     plt.savefig(
-        f"{dir}Algorithm{CoverageControl.algorithm}_TotalCost{dt*sum(cost):.2f}_agents{n_agents}_iterations{len(time):.2f}_phi{phi}_eps{eps}_k{k}.png"
+        f"{dir}Algorithm{CoverageControl.algorithm}_TotalCost{dt*sum(cost):.2f}_agents{n_agents}_iterations{len(time):.2f}_phi{phi}_eps{eps}_k{k}_deta{CoverageControl.m_deta_string}.png",
+        bbox_inches="tight", dpi=600
     )
 
 
@@ -224,21 +229,18 @@ def main():
     n_agents = 10
     dir = "pycoverage2d/data/"
     algorithm_list = [
-        # "Lloyd",
-        # "TVD-K",
-        # "TVD-C",
-        # "TVD-SP",
+        "Lloyd",
+        "TVD-K",
+        "TVD-C",
+        "TVD-SP",
         "TVD-SP-delayed",
-        # "TVD-SP-hybrid_italic",
-        # "TVD-SP-hybrid_non-italic",
+        "TVD-SP-hybrid_italic",
+        "TVD-SP-hybrid_non-italic",
     ]
     T = 10 * np.pi
     tau = 5
     eps_vec = [1e-1, 5e-2, 1e-2, 5e-3, 1e-3]
     k_vec = [0, 1, 2, 3]
-    # for algorithm in algorithm_list:
-    #     run_sim(num_points, n_agents, algorithm, T=T, tau=tau, phi=1, dir=dir)
-    # exit()
     for phi in range(1, 4):
         for algorithm in algorithm_list:
             if "TVD-SP" in algorithm:

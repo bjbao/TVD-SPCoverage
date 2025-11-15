@@ -528,8 +528,8 @@ def main():
         # "TVD-C",
         # "TVD-SP",
         # "TVD-SP-delayed",
-        # "TVD-SP-hybrid_italic",
-        "TVD-SP-hybrid_non-italic",
+        "TVD-SP-hybrid_italic",
+        # "TVD-SP-hybrid_non-italic",
     ]
     phi = 4
     T = 4000

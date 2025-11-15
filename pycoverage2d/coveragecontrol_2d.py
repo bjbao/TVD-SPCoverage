@@ -553,7 +553,7 @@ class TVD(CoverageControl):
         ax1.set_ylim([-1.1, 1.1])
         ax2.set_ylim([-1.1, 1.1])
 
-        path = "final_data/" + self.algorithm + self.save_params + "/"
+        path = "pycoverage2d/data/" + self.algorithm + self.save_params + "/"
         if not os.path.exists(path):
             # Create a new directory because it does not exist
             os.makedirs(path)
@@ -649,7 +649,6 @@ class TVD_SP(TVD):
         """
         self.__checkConvergence()
         if self.algorithm == "TVD-SP":
-            # if self.frame == 1:
             self.grad0 = self.b
             grad = self.sing_perturbation(
                 self.A,
@@ -663,8 +662,9 @@ class TVD_SP(TVD):
                 debug_mode=True,
             )
             self.grad0 = grad
-        elif self.algorithm == "TVD-SSP":
-            self.grad0 = self.b
+        elif self.algorithm == "TVD-SSP": # Unmodified start
+            if self.frame == 1:
+                self.grad0 = self.b
             grad = self.sing_perturbation(
                 self.A,
                 self.b,
@@ -746,7 +746,8 @@ class TVD_SP(TVD):
         [w2, v2] = np.linalg.eig(self.A)
         index2 = np.argmax(np.abs(w2))
         # print(w2[index2])
-        self.m_deta = 1/(4*L)
+        self.m_deta = 1/2
+        self.m_deta_string = "1_2"
         print("1/L: ", 1 / L)
         # if self.deta > 1 / L:
         #     print(
@@ -758,7 +759,7 @@ class TVD_SP(TVD):
 
     def saveData(self, dir, seed, model, save_params):
         super().saveData(dir, seed, model, save_params)
-        if self.algorithm == "TVD-SP-hybrid":
+        if "TVD-SP-hybrid" in self.algorithm:
             super().saveEig("A_Bar", self.A_bar_min_eigs, self.A_bar_max_eigs)
             super().saveEig("A_Hat", self.A_hat_min_eigs, self.A_hat_max_eigs)
 
@@ -905,7 +906,7 @@ class TVD_SP(TVD):
 
         def hybrid_terms_italic(A, dcdp):
             """
-            Computes the hybrid gradient update for each agent. There are better ways to compute this, but this is meant to do the calculation so that we have concrete simulation for the paper. A_1 in paper. New paper, this one is A italic.
+            Computes the hybrid gradient update for each agent. A_1 in paper. New paper, this one is A italic.
             grad = A_bar*u + A_hat*u + b
             """
             A_bar = np.zeros(shape=A_shape)
@@ -918,28 +919,34 @@ class TVD_SP(TVD):
                 
                 temp_b = np.zeros(shape=(d, 1))
                 ii = A[i * d : (i + 1) * d, i * d : (i + 1) * d] # (I-dc/dp)_ii
-                for j in neighbors1[i]:
+                neighbors2_i_all = [*neighbors2[i][0], *neighbors2[i][1]]
+                for j in range(num_agents):
                     ij = dcdp[i * d : (i + 1) * d, j * d : (j + 1) * d]
                     ji = dcdp[j * d : (j + 1) * d, i * d : (i + 1) * d]
                     jj = A[j * d : (j + 1) * d, j * d : (j + 1) * d]
-                    temp_bar_ii = ji.T @ ji
                     temp_bar_ij1 = ii.T @ ij + ji.T @ jj
-                    temp_b += ji.T @ b[j * d : (j + 1) * d]
                     temp_bar_ij2 = np.zeros(shape=(d, d))
-                    if j in neighbors2[i][0]:
-                        ki = dcdp[j * d : (j + 1) * d, i * d : (i + 1) * d]
-                        kj = dcdp[j * d : (j + 1) * d, j * d : (j + 1) * d]
-                        temp_bar_ij2 += ki.T @ kj
-                    A_bar[i * d : (i + 1) * d, j * d : (j + 1) * d] = (
-                        -temp_bar_ij1 + temp_bar_ij2
-                    )
-
-                for k in neighbors2[i][1]:
-                    # only 2 hop
-                    ki = dcdp[k * d : (k + 1) * d, i * d : (i + 1) * d]
-                    kj = dcdp[k * d : (k + 1) * d, j * d : (j + 1) * d]
-                    A_hat[i * d : (i + 1) * d, k * d : (k + 1) * d] += ki.T @ kj
-
+                    if (j in neighbors1[i]) and (j not in neighbors2_i_all):
+                        A_bar[i * d : (i + 1) * d, j * d : (j + 1) * d] = -temp_bar_ij1
+                    elif j in neighbors2[i][0]:
+                        neighbors_i_intersect_j = list(set(neighbors1[i]) & set(neighbors1[j]))
+                        for k in neighbors_i_intersect_j:
+                            ki = dcdp[k * d : (k + 1) * d, i * d : (i + 1) * d]
+                            kj = dcdp[k * d : (k + 1) * d, j * d : (j + 1) * d]
+                            temp_bar_ij2 += ki.T @ kj
+                        A_bar[i * d : (i + 1) * d, j * d : (j + 1) * d] = (
+                            -temp_bar_ij1 + temp_bar_ij2
+                        )
+                    elif j in neighbors2[i][1]:
+                        neighbors_i_intersect_j = list(set(neighbors1[i]) & set(neighbors1[j]))
+                        for k in neighbors_i_intersect_j:
+                            ki = dcdp[k * d : (k + 1) * d, i * d : (i + 1) * d]
+                            kj = dcdp[k * d : (k + 1) * d, j * d : (j + 1) * d]
+                            A_hat[i * d : (i + 1) * d, j * d : (j + 1) * d] += ki.T @ kj
+                        
+                    if j in neighbors1[i]:
+                        temp_bar_ii += ji.T @ ji
+                        temp_b += ji.T @ b[j * d : (j + 1) * d]
                 A_bar[i * d : (i + 1) * d, i * d : (i + 1) * d] = (
                     ii.T @ ii + temp_bar_ii
                 )
@@ -950,7 +957,7 @@ class TVD_SP(TVD):
 
         def hybrid_terms_nonitalic(A, dcdp):
             """
-            Computes the hybrid gradient update for each agent. There are better ways to compute this, but this is meant to do the calculation so that we have concrete simulation for the paper
+            Computes the hybrid gradient update for each agent.
             grad = A_bar*u + A_hat*u + b. Alternative A in paper, not A_1. New paper, this one is A non-italic.
             """
             A_bar = np.zeros(shape=A_shape)
@@ -958,22 +965,24 @@ class TVD_SP(TVD):
             b_bar = np.zeros(shape=(len(A), 1))
             for i in range(num_agents):
                 temp_bar_ii = np.zeros(shape=(d, d))
-                temp_bar_ij1 = np.zeros(shape=(d, d))
+                # temp_bar_ij1 = np.zeros(shape=(d, d))
                 temp_b = np.zeros(shape=(d, 1))
                 ii = A[i * d : (i + 1) * d, i * d : (i + 1) * d]
+                neighbors2_i_all = [*neighbors2[i][0], *neighbors2[i][1]]
                 for j in neighbors1[i]:
                     ij = dcdp[i * d : (i + 1) * d, j * d : (j + 1) * d]
                     ji = dcdp[j * d : (j + 1) * d, i * d : (i + 1) * d]
                     jj = A[j * d : (j + 1) * d, j * d : (j + 1) * d]
-                    temp_bar_ii = ji.T @ ji
+                    temp_bar_ii += ji.T @ ji
                     temp_bar_ij1 = ii.T @ ij + ji.T @ jj
                     temp_b += ji.T @ b[j * d : (j + 1) * d]
                     A_bar[i * d : (i + 1) * d, j * d : (j + 1) * d] = -temp_bar_ij1
-
-                for k in neighbors2[i][0]:
-                    ki = dcdp[k * d : (k + 1) * d, i * d : (i + 1) * d]
-                    kj = dcdp[k * d : (k + 1) * d, j * d : (j + 1) * d]
-                    A_hat[i * d : (i + 1) * d, k * d : (k + 1) * d] += ki.T @ kj
+                for j in neighbors2_i_all:
+                    neighbors_i_intersect_j = list(set(neighbors1[i]) & set(neighbors1[j]))
+                    for k in neighbors_i_intersect_j:
+                        ki = dcdp[k * d : (k + 1) * d, i * d : (i + 1) * d]
+                        kj = dcdp[k * d : (k + 1) * d, j * d : (j + 1) * d]
+                        A_hat[i * d : (i + 1) * d, j * d : (j + 1) * d] += ki.T @ kj
 
                 A_bar[i * d : (i + 1) * d, i * d : (i + 1) * d] = (
                     ii.T @ ii + temp_bar_ii

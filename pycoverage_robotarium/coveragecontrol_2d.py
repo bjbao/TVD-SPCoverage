@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Brandon Bao
+# Copyright (C) 2020 Melcior Pijoan Comas
 #
 # This file is part of tvd-coverage.
 #
@@ -16,6 +16,10 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+"""
+Simulations Singular Perturbation Paper
+"""
 
 import os
 
@@ -245,9 +249,7 @@ class CoverageControl:
         self.c = np.zeros(np.size(self.position))
         self.area = np.array([x["volume"] for x in self.vor])
         # [self.mu, self.sigma] = self.trajectory.getValuesAtT(self.t)
-        self.mass, self.centroid = pyvoro2d.calculate_mass_and_centroid(
-            self.vor, self.phi, self.t, self.position
-        )
+        self.mass, self.centroid = pyvoro2d.calculate_mass_and_centroid(self.vor, self.phi, self.t, self.position)
 
         # self.mass = pyvoro2d.monte_carlo_integrate(
         #     self.points_all,
@@ -335,7 +337,7 @@ class CoverageControl:
         Cost for a step
         """
         self.cost = pyvoro2d.calculate_cost(self.vor, self.phi, self.t, self.position)
-        # print(f"coverage cost:{self.cost}")
+        print(f"coverage cost:{self.cost}")
         # self.cost = sum(
         #     pyvoro2d.monte_carlo_integrate(
         #         self.points_all,
@@ -366,7 +368,7 @@ class CoverageControl:
             agent.t += self.dt
             agent.t_vec.append(agent.t)
         self.position = self.new_pos
-        # print(f"p_new:{self.new_pos}")
+        print(f"p_new:{self.new_pos}")
         self.position_vec.append(self.new_pos)
         self.velocity_vec.append(self.velocity)
         self.t_vec.append(self.t)
@@ -446,9 +448,7 @@ class TVD(CoverageControl):
         if self.dim == 2:
             self.bad = True
             self.dim = 2
-        self.dcdt = pyvoro2d.calculate_dcdt(
-            self.vor, self.phi_dot, self.t, self.mass, self.centroid, self.position
-        )
+        self.dcdt = pyvoro2d.calculate_dcdt(self.vor, self.phi_dot,self.t, self.mass, self.centroid, self.position)
         # self.dcdt = pyvoro2d.monte_carlo_integrate(
         #     self.points_all,
         #     self.area,
@@ -480,7 +480,7 @@ class TVD(CoverageControl):
                 self.t,
                 eps_rel=1e-3,
                 show_plot=False,
-                model=self.model,
+                model=self.model
             )  # output 2 by 2 for self.dim = 2
             self.dcdp[
                 self.dim * i : self.dim * (i + 1), self.dim * i : self.dim * (i + 1)
@@ -660,7 +660,7 @@ class TVD_SP(TVD):
                 self.eps,
                 trim_u=True,
                 max_u=self.max_vel,
-                debug_mode=False,
+                debug_mode=True,
             )
             self.grad0 = grad
         elif self.algorithm == "TVD-SSP":
@@ -690,7 +690,7 @@ class TVD_SP(TVD):
                 self.neighbors2,
                 trim_u=True,
                 max_u=self.max_vel,
-                debug_mode=False,
+                debug_mode=True,
                 d=self.dim,
                 type="italic",
                 dcdp=self.dcdp,
@@ -709,7 +709,7 @@ class TVD_SP(TVD):
                 self.neighbors2,
                 trim_u=True,
                 max_u=self.max_vel,
-                debug_mode=False,
+                debug_mode=True,
                 d=self.dim,
                 type="non-italic",
                 dcdp=self.dcdp,
@@ -727,7 +727,7 @@ class TVD_SP(TVD):
                 self.eps,
                 trim_u=True,
                 max_u=3,
-                debug_mode=False,
+                debug_mode=True,
                 d=self.dim,
             )
             self.grad0 = grad
@@ -746,8 +746,8 @@ class TVD_SP(TVD):
         [w2, v2] = np.linalg.eig(self.A)
         index2 = np.argmax(np.abs(w2))
         # print(w2[index2])
-        self.m_deta = 1 / (2 * L)
-        # print("1/L: ", 1 / L)
+        self.m_deta = 1
+        print("1/L: ", 1 / L)
         # if self.deta > 1 / L:
         #     print(
         #         "deta too big, singular perturbation may not converge, we need deta < 1/L"
@@ -893,7 +893,7 @@ class TVD_SP(TVD):
         debug_mode=False,
         d=None,
         type="italic",
-        dcdp=None,
+        dcdp=None
     ):
         """
         Calculates gradient direction based on Singular Perturbation
@@ -905,7 +905,7 @@ class TVD_SP(TVD):
 
         def hybrid_terms_italic(A, dcdp):
             """
-            Computes the hybrid gradient update for each agent. There are better ways to compute this, but this is meant to do the calculation so that we have concrete simulation for the paper. A_1 in paper. New paper, this one is A italic.
+            Computes the hybrid gradient update for each agent. A_1 in paper. New paper, this one is A italic.
             grad = A_bar*u + A_hat*u + b
             """
             A_bar = np.zeros(shape=A_shape)
@@ -915,31 +915,37 @@ class TVD_SP(TVD):
             for i in range(num_agents):
                 temp_bar_ii = np.zeros(shape=(d, d))
                 temp_bar_ij1 = np.zeros(shape=(d, d))
-
+                
                 temp_b = np.zeros(shape=(d, 1))
-                ii = A[i * d : (i + 1) * d, i * d : (i + 1) * d]  # (I-dc/dp)_ii
-                for j in neighbors1[i]:
+                ii = A[i * d : (i + 1) * d, i * d : (i + 1) * d] # (I-dc/dp)_ii
+                neighbors2_i_all = [*neighbors2[i][0], *neighbors2[i][1]]
+                for j in range(num_agents):
                     ij = dcdp[i * d : (i + 1) * d, j * d : (j + 1) * d]
                     ji = dcdp[j * d : (j + 1) * d, i * d : (i + 1) * d]
                     jj = A[j * d : (j + 1) * d, j * d : (j + 1) * d]
-                    temp_bar_ii = ji.T @ ji
                     temp_bar_ij1 = ii.T @ ij + ji.T @ jj
-                    temp_b += ji.T @ b[j * d : (j + 1) * d]
                     temp_bar_ij2 = np.zeros(shape=(d, d))
-                    if j in neighbors2[i][0]:
-                        ki = dcdp[j * d : (j + 1) * d, i * d : (i + 1) * d]
-                        kj = dcdp[j * d : (j + 1) * d, j * d : (j + 1) * d]
-                        temp_bar_ij2 += ki.T @ kj
-                    A_bar[i * d : (i + 1) * d, j * d : (j + 1) * d] = (
-                        -temp_bar_ij1 + temp_bar_ij2
-                    )
-
-                for k in neighbors2[i][1]:
-                    # only 2 hop
-                    ki = dcdp[k * d : (k + 1) * d, i * d : (i + 1) * d]
-                    kj = dcdp[k * d : (k + 1) * d, j * d : (j + 1) * d]
-                    A_hat[i * d : (i + 1) * d, k * d : (k + 1) * d] += ki.T @ kj
-
+                    if (j in neighbors1[i]) and (j not in neighbors2_i_all):
+                        A_bar[i * d : (i + 1) * d, j * d : (j + 1) * d] = -temp_bar_ij1
+                    elif j in neighbors2[i][0]:
+                        neighbors_i_intersect_j = list(set(neighbors1[i]) & set(neighbors1[j]))
+                        for k in neighbors_i_intersect_j:
+                            ki = dcdp[k * d : (k + 1) * d, i * d : (i + 1) * d]
+                            kj = dcdp[k * d : (k + 1) * d, j * d : (j + 1) * d]
+                            temp_bar_ij2 += ki.T @ kj
+                        A_bar[i * d : (i + 1) * d, j * d : (j + 1) * d] = (
+                            -temp_bar_ij1 + temp_bar_ij2
+                        )
+                    elif j in neighbors2[i][1]:
+                        neighbors_i_intersect_j = list(set(neighbors1[i]) & set(neighbors1[j]))
+                        for k in neighbors_i_intersect_j:
+                            ki = dcdp[k * d : (k + 1) * d, i * d : (i + 1) * d]
+                            kj = dcdp[k * d : (k + 1) * d, j * d : (j + 1) * d]
+                            A_hat[i * d : (i + 1) * d, j * d : (j + 1) * d] += ki.T @ kj
+                        
+                    if j in neighbors1[i]:
+                        temp_bar_ii += ji.T @ ji
+                        temp_b += ji.T @ b[j * d : (j + 1) * d]
                 A_bar[i * d : (i + 1) * d, i * d : (i + 1) * d] = (
                     ii.T @ ii + temp_bar_ii
                 )
@@ -950,7 +956,7 @@ class TVD_SP(TVD):
 
         def hybrid_terms_nonitalic(A, dcdp):
             """
-            Computes the hybrid gradient update for each agent. There are better ways to compute this, but this is meant to do the calculation so that we have concrete simulation for the paper
+            Computes the hybrid gradient update for each agent.
             grad = A_bar*u + A_hat*u + b. Alternative A in paper, not A_1. New paper, this one is A non-italic.
             """
             A_bar = np.zeros(shape=A_shape)
@@ -958,23 +964,24 @@ class TVD_SP(TVD):
             b_bar = np.zeros(shape=(len(A), 1))
             for i in range(num_agents):
                 temp_bar_ii = np.zeros(shape=(d, d))
-                temp_bar_ij1 = np.zeros(shape=(d, d))
+                # temp_bar_ij1 = np.zeros(shape=(d, d))
                 temp_b = np.zeros(shape=(d, 1))
                 ii = A[i * d : (i + 1) * d, i * d : (i + 1) * d]
+                neighbors2_i_all = [*neighbors2[i][0], *neighbors2[i][1]]
                 for j in neighbors1[i]:
                     ij = dcdp[i * d : (i + 1) * d, j * d : (j + 1) * d]
                     ji = dcdp[j * d : (j + 1) * d, i * d : (i + 1) * d]
                     jj = A[j * d : (j + 1) * d, j * d : (j + 1) * d]
-                    temp_bar_ii = ji.T @ ji
+                    temp_bar_ii += ji.T @ ji
                     temp_bar_ij1 = ii.T @ ij + ji.T @ jj
                     temp_b += ji.T @ b[j * d : (j + 1) * d]
                     A_bar[i * d : (i + 1) * d, j * d : (j + 1) * d] = -temp_bar_ij1
-
-                for k in neighbors2[i][0]:
-                    ki = dcdp[k * d : (k + 1) * d, i * d : (i + 1) * d]
-                    kj = dcdp[k * d : (k + 1) * d, j * d : (j + 1) * d]
-                    A_hat[i * d : (i + 1) * d, k * d : (k + 1) * d] += ki.T @ kj
-
+                for j in neighbors2_i_all:
+                    neighbors_i_intersect_j = list(set(neighbors1[i]) & set(neighbors1[j]))
+                    for k in neighbors_i_intersect_j:
+                        ki = dcdp[k * d : (k + 1) * d, i * d : (i + 1) * d]
+                        kj = dcdp[k * d : (k + 1) * d, j * d : (j + 1) * d]
+                        A_hat[i * d : (i + 1) * d, j * d : (j + 1) * d] += ki.T @ kj
                 A_bar[i * d : (i + 1) * d, i * d : (i + 1) * d] = (
                     ii.T @ ii + temp_bar_ii
                 )
