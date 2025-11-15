@@ -101,11 +101,11 @@ def plot_cost(folder, filename):
     fig = plt.figure(figsize=fs, dpi=dpi)
     ax = fig.add_subplot(111)
     ax.plot(cost)
-    fig.suptitle(
-        f"{os.path.basename(path)[:-4]} Total Cost {cost_val:.2f}", fontsize=10
-    )
-    plt.ylabel("Cost H", fontsize=10)
-    plt.xlabel("Iteration", fontsize=10)
+    # fig.suptitle(
+    #     f"{os.path.basename(path)[:-4]} Total Cost {cost_val:.2f}", fontsize=10
+    # )
+    plt.ylabel("Cost", fontsize=10)
+    plt.xlabel("Time (s)", fontsize=10)
     plt.xlim((0, len(time)))
     plt.ylim(bottom=0)
     x1, x2, y1, y2 = -1.5, -0.9, -2.5, -1.9  # subregion of the original image
@@ -140,6 +140,64 @@ def plot_cost(folder, filename):
     ax.set_title("TVD-SP-Cost ")
 
 
+def plot_fig4(folder, filenames):
+    times = []
+    costs = []
+    for filename in filenames:
+        path = os.path.join(folder, filename)
+        data = np.genfromtxt(path, delimiter=",", skip_header=1)
+        cost = []
+        time = []
+        for row in data:
+            time.append(row[0])
+            cost.append(row[1])
+        times.append(time)
+        costs.append(cost)
+    dpi = 600
+    fs = (3.5, 3.5)
+    fig = plt.figure(figsize=fs, dpi=dpi)
+    ax = fig.add_subplot(111)
+    for idx in range(len(filenames)):
+        ax.plot(times[idx], costs[idx])
+    plt.ylabel("Cost", fontsize=10)
+    plt.xlabel("Time (s)", fontsize=10)
+    plt.xlim((0, max(time)))
+    plt.ylim(bottom=0)
+
+    x1, x2, y1, y2 = 2, time[-1], 1, 1.5  # subregion of the original image
+    axins = ax.inset_axes(
+        [0.5, 0.5, 0.47, 0.47],
+        xlim=(x1, x2),
+        ylim=(y1, y2),
+        # xticklabels=[], yticklabels=[]
+    )
+    for idx in range(len(filenames)):
+        axins.plot(times[idx], costs[idx])
+
+    ax.indicate_inset_zoom(
+        axins,
+        edgecolor="black",
+        alpha=0.2,
+        # linestyle="--",  # Use a dashed line
+    )
+
+    # x1, x2, y1, y2 = -1.5, -0.9, -2.5, -1.9  # subregion of the original image
+    # axins = inset_axes(ax, width=2, height=1.5, loc="lower center")
+    # axins = zoomed_inset_axes(ax, zoom=2, loc='lower center')
+    # for idx in range(len(filenames)):
+    #     axins.plot(times[idx], costs[idx])
+    # # fix the number of ticks on the inset axes
+    # axins.yaxis.get_major_locator().set_params(nbins=7)
+    # axins.xaxis.get_major_locator().set_params(nbins=7)
+    # axins.tick_params(labelleft=False, labelbottom=False)
+    # mark_inset(ax, axins, loc1=2, loc2=3, fc="none", ec="0.5")
+    colors = ["blue", "orange", "green", "red"]
+    name = "_".join(
+        [f'{filename.split("Algorithm")[1].split("_Total")[0]}_{colors[i]}' for i,filename in enumerate(filenames)]
+    )
+    plt.savefig(f"{os.path.join(folder,name)}.png", bbox_inches="tight", dpi=600)
+
+
 def main():
     # filename = 'pycoverage_robotarium\\TVD-SP-hybrid_cost_A_italic_1.txt'
     # filename = 'pycoverage_robotarium\\TVD-SP-hybrid_cost_A_non-italic_1.txt'
@@ -170,4 +228,12 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    folder = "pycoverage2d/data/"
+    filenames = [
+        "AlgorithmTVD-SP_TotalCost40.80_agents10__iterations315.00_phi3_eps0.001_k1_cost.txt",
+        "AlgorithmTVD-SP-delayed_TotalCost42.34_agents10__iterations315.00_phi3_eps0.001_k1_cost.txt",
+        "AlgorithmTVD-SP-hybrid_italic_TotalCost41.52_agents10__iterations315.00_phi3_eps0.001_k1_cost.txt",
+        "AlgorithmTVD-SP-hybrid_non-italic_TotalCost41.18_agents10__iterations315.00_phi3_eps0.001_k1_cost.txt",
+    ]
+    plot_fig4(folder, filenames)
