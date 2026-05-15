@@ -1,3 +1,25 @@
+# Copyright (C) 2025 Brandon Bao
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# SPDX-License-Identifier: MIT
+
 import cProfile
 import functools
 import os
@@ -112,7 +134,7 @@ def getPhi(number=4, num_frames=100, dim=2, T=100, tau=5):
             d,
             rotations,
         )
-    elif number == 4:
+    elif number == 5:
         mu_a = [10.0, 10.0]
         mu_b = [0.0, 0.0]
         sigma_a = np.array([[0.3, 0.3], [0.6, 0.6]])
@@ -139,8 +161,36 @@ def getPhi(number=4, num_frames=100, dim=2, T=100, tau=5):
             d,
             rotations,
         )
+    elif number == 4:
+        mu_a = [10.0, 10.0]
+        mu_b = [0.0, 0.0]
+
+        sigma_a = [0.75, 0.75]
+        sigma_b = [0.75, 0.75]
+        radius = 0.6
+        center = np.array([0, 0])
+        rotations = T / tau  # L: tau
+        a = np.array([1, 0])
+        b = np.array([0, 1])
+        c = 0.6
+        d = 0.6
+        trajectory = Ellipse(
+            mu_a,
+            mu_b,
+            sigma_a,
+            sigma_b,
+            num_frames,
+            dim,
+            radius,
+            center,
+            a,
+            b,
+            c,
+            d,
+            rotations,
+        )
     else:
-        raise ValueError("Pick phi 1-4")
+        raise ValueError("Pick phi 1-5")
     return trajectory
 
 

@@ -427,6 +427,7 @@ class TVD(CoverageControl):
         self.algorithm = "TVD-C"
         self.A_min_eigs = []
         self.A_max_eigs = []
+        self.cond_vec = []
 
     def calculateVelocities(self, x=None):
         """
@@ -437,6 +438,9 @@ class TVD(CoverageControl):
         self.getEssentialTerms()
         self.calculateTVDTerms()
         grad1 = np.linalg.inv(self.A).dot(self.b)
+        cond = np.linalg.cond(self.A)
+        print(f"{cond=}")
+        self.cond_vec.append(cond)
         self.velocity = np.reshape(grad1, (self.n_agents, 2))
         self.velocityCleanup()
         self.frame += 1

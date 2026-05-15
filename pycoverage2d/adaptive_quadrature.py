@@ -122,12 +122,13 @@ def integrate_adaptive(
 
         # mark good intervals, gather values and error estimates
         # is_good = _numpy_all_except(error_estimate < eps_rel * areas / total_area, axis=-1)
-        is_good = np.zeros(np.shape(error_estimate)[-1], dtype="bool")
-        for i in range(np.shape(error_estimate)[-1]):
-            if np.all(
-                error_estimate[..., i] < total_val * eps_rel * areas[i] / total_area
-            ):
-                is_good[i] = True
+
+        # Replace the manual loop with:
+        # Assuming error_estimate is (..., n_triangles)
+        is_good = np.all(
+            (error_estimate < total_val * eps_rel * areas / total_area) | (total_val == 0),
+            axis=tuple(range(error_estimate.ndim - 1))
+        )
 
         # add values from good intervals to sum
         quad_sum += sumfun(val1[..., is_good], axis=-1)

@@ -217,11 +217,51 @@ def run_sim(
     plt.xlim((0, max(time)))
     plt.ylim(bottom=0)
     cost_val = sum(cost)
-    
-    plt.savefig(
-        f"{dir}Algorithm{CoverageControl.algorithm}_TotalCost{dt*sum(cost):.2f}_agents{n_agents}_iterations{len(time):.2f}_phi{phi}_eps{eps}_k{k}_deta{CoverageControl.m_deta_string}.png",
-        bbox_inches="tight", dpi=600
-    )
+    try:
+        plt.savefig(
+            f"{dir}Algorithm{CoverageControl.algorithm}_TotalCost{dt*sum(cost):.2f}_agents{n_agents}_iterations{len(time):.2f}_phi{phi}_eps{eps}_k{k}_deta{CoverageControl.m_deta_string}.png",
+            bbox_inches="tight", dpi=600
+        )
+    except:
+        plt.savefig(
+            f"{dir}Algorithm{CoverageControl.algorithm}_TotalCost{dt*sum(cost):.2f}_agents{n_agents}_iterations{len(time):.2f}_phi{phi}_eps{eps}_k{k}.png",
+            bbox_inches="tight", dpi=600
+        )
+
+    positions = CoverageControl.position_vec
+    pos_history = np.array(positions) 
+
+    dpi = 600
+    fs = (3.5, 3.5)
+    fig = plt.figure(figsize=fs, dpi=dpi)
+    ax = fig.add_subplot(111)
+
+    for i in range(n_agents):
+        # Extract the X and Y coordinates for robot i over all time steps
+        x_coords = pos_history[:, i, 0]
+        y_coords = pos_history[:, i, 1]
+        
+        # Plot the 2D path
+        ax.plot(x_coords, y_coords, linewidth=1, label=f"Robot {i+1}")
+        
+        # Optional: Mark the initial position with a dot
+        ax.scatter(x_coords[0], y_coords[0], s=5, zorder=5)
+
+    ax.set_xlabel("X Position", fontsize=10)
+    ax.set_ylabel("Y Position", fontsize=10)
+    ax.grid(True, linestyle='--', alpha=0.6)
+
+    # Reuse your naming convention for consistency
+    try:
+        filename = (
+            f"{dir}Algorithm{CoverageControl.algorithm}_TotalCost{dt*sum(cost):.2f}_XYPlot_agents_agents{n_agents}_iterations{len(time):.2f}_phi{phi}_eps{eps}_k{k}_deta{CoverageControl.m_deta_string}.png"
+        )
+    except:
+        filename = (
+            f"{dir}Algorithm{CoverageControl.algorithm}_TotalCost{dt*sum(cost):.2f}_XYPlot_agents_agents{n_agents}_iterations{len(time):.2f}_phi{phi}_eps{eps}_k{k}.png"
+        )
+
+    plt.savefig(filename, bbox_inches="tight", dpi=600)
 
 
 def main():
@@ -241,7 +281,7 @@ def main():
     tau = 5
     eps_vec = [1e-1, 5e-2, 1e-2, 5e-3, 1e-3]
     k_vec = [0, 1, 2, 3]
-    for phi in range(1, 4):
+    for phi in range(1, 5):
         for algorithm in algorithm_list:
             if "TVD-SP" in algorithm:
                 for eps in eps_vec:

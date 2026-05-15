@@ -173,6 +173,20 @@ def get_phi(model, tau=5):
                 -1 * ((x - 2 * np.cos(t / tau)) ** 2 + (y - 2 * np.sin(t / tau)) ** 2)
             )
         elif model == 4:
+            l = 1
+            k = 1
+            a = 1.4
+            b = 0.6 
+            x_c = 0
+            y_c = 0
+            r_sq = 4
+            r_amp = 2
+            def SR(x):
+                return x*(np.arctan(l*x)/np.pi + 0.5)
+            def g(x, y):
+                return a*(x-(x_c + r_amp*np.sin(t/tau)))**2 + b*(y-y_c)**2 - (r_sq )
+            f = np.exp(-k*SR(g(x,y)))
+        elif model == 5:
             # if not (isinstance(sigma, float) or isinstance(sigma, int)):
             # if sigma.size == 2:
             # Phi 4
@@ -248,6 +262,20 @@ def get_phidot(model=1, tau=5):
                 + 4 / tau * (y - 2 * np.sin(t / tau)) * np.cos(t / tau)
             )
         elif model == 4:
+            l = 1
+            k = 1
+            a = 1.4
+            b = 0.6 
+            x_c = 0
+            y_c = 0
+            r_sq = 4
+            r_amp = 2
+            def SR_prime(x):
+                return np.arctan(l*x)/np.pi + 0.5 + (l*x)/(np.pi*(1+(l**2*x**2)))
+            def g(x, y):
+                return a*(x-(x_c + r_amp*np.sin(t/tau)))**2 + b*(y-y_c)**2 - (r_sq )
+            f = 2*a*k*phi(x,y,t,tau=tau)*SR_prime(g(x,y)) * r_amp / tau * np.cos(t/tau) * (x-(x_c + r_amp*np.sin(t/tau)))
+        elif model == 5:
 
             # Phi 5
             tau = 1500 / (2 * np.pi)  # 20 # L: tau

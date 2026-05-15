@@ -531,7 +531,7 @@ def main():
         "TVD-SP-hybrid_italic",
         # "TVD-SP-hybrid_non-italic",
     ]
-    phi = 4
+    phi = 5
     T = 4000
     tau = 1000 / (2 * np.pi)
     for algorithm in algorithm_list:

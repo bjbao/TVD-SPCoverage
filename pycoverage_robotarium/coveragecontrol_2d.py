@@ -427,6 +427,7 @@ class TVD(CoverageControl):
         self.algorithm = "TVD-C"
         self.A_min_eigs = []
         self.A_max_eigs = []
+        self.cond_vec = []
 
     def calculateVelocities(self, x=None):
         """
@@ -437,6 +438,9 @@ class TVD(CoverageControl):
         self.getEssentialTerms()
         self.calculateTVDTerms()
         grad1 = np.linalg.inv(self.A).dot(self.b)
+        cond = np.linalg.cond(self.A)
+        print(f"{cond=}")
+        self.cond_vec.append(cond)
         self.velocity = np.reshape(grad1, (self.n_agents, 2))
         self.velocityCleanup()
         self.frame += 1
@@ -553,7 +557,7 @@ class TVD(CoverageControl):
         ax1.set_ylim([-1.1, 1.1])
         ax2.set_ylim([-1.1, 1.1])
 
-        path = "final_data/" + self.algorithm + self.save_params + "/"
+        path = "pycoverage2d/data/" + self.algorithm + self.save_params + "/"
         if not os.path.exists(path):
             # Create a new directory because it does not exist
             os.makedirs(path)
@@ -649,7 +653,6 @@ class TVD_SP(TVD):
         """
         self.__checkConvergence()
         if self.algorithm == "TVD-SP":
-            # if self.frame == 1:
             self.grad0 = self.b
             grad = self.sing_perturbation(
                 self.A,
@@ -663,8 +666,9 @@ class TVD_SP(TVD):
                 debug_mode=True,
             )
             self.grad0 = grad
-        elif self.algorithm == "TVD-SSP":
-            self.grad0 = self.b
+        elif self.algorithm == "TVD-SSP": # Unmodified start
+            if self.frame == 1:
+                self.grad0 = self.b
             grad = self.sing_perturbation(
                 self.A,
                 self.b,
@@ -746,7 +750,8 @@ class TVD_SP(TVD):
         [w2, v2] = np.linalg.eig(self.A)
         index2 = np.argmax(np.abs(w2))
         # print(w2[index2])
-        self.m_deta = 1
+        self.m_deta = 1/2
+        self.m_deta_string = "1_2"
         print("1/L: ", 1 / L)
         # if self.deta > 1 / L:
         #     print(
@@ -758,7 +763,7 @@ class TVD_SP(TVD):
 
     def saveData(self, dir, seed, model, save_params):
         super().saveData(dir, seed, model, save_params)
-        if self.algorithm == "TVD-SP-hybrid":
+        if "TVD-SP-hybrid" in self.algorithm:
             super().saveEig("A_Bar", self.A_bar_min_eigs, self.A_bar_max_eigs)
             super().saveEig("A_Hat", self.A_hat_min_eigs, self.A_hat_max_eigs)
 
