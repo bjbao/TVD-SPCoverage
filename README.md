@@ -4,9 +4,10 @@ This respository contains UCSD coverage control algorithm implementations for th
 2D simulations are in pycoverage_2d, while Robotarium implementations are in pycoverage_robotarium.
 
 ## Installation
-run
 ```
-pip install path/to/tvd_coverage/
+uv lock 
+uv sync 
+uv run pycoverage2d/simulations.py
 ```
 See the [Robotarium python simulator](https://github.com/robotarium/robotarium_python_simulator) and the Robotarium [website](https://www.robotarium.gatech.edu/get_started) if you want to try it for yourself. Follow their install instructions to use the pycoverage_robotarium code.
 
