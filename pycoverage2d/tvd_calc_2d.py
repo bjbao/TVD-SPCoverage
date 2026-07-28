@@ -167,26 +167,18 @@ def dcdp_integration(
     s = np.linspace(0, 1, numPoints, endpoint=False)
     s = s[np.newaxis, ...].T
     q = s * pk + (1 - s) * pkk
-    # qq = [np.dstack(i) for i in q]
-    # f = rv.pdf(x=q) # There is some discrepency. Check which phi is being used for all calculations
     f = phi(q[:, 0], q[:, 1], t)
 
     normRatio = norm1 / norm / numPoints
     qmc = q - c
+    num_q = len(q)
+    
     for i, q_value in enumerate(q):
-        if i == 0 or i == (len(q - 1)):
-            integral_ii += 0.5 * np.outer(qmc[i], q_value - pi) * f[i]
-            integral_ij += -0.5 * np.outer(qmc[i], q_value - p_neigh) * f[i]
-        else:
-            integral_ii += np.outer(qmc[i], q_value - pi) * f[i]
-            integral_ij += -1.0 * np.outer(qmc[i], q_value - p_neigh) * f[i]
-
-    # fig1 = plt.figure()
-    # ax = fig1.add_subplot(111)
-    # ax.plot(s, f)
-    # # ax.vlines(x=point, ymin=0, ymax=max(f), colors='r')
-
-    # plt.show()
+        # Correct index check for first (0) and last (num_q - 1) trapezoidal points
+        weight = 0.5 if (i == 0 or i == num_q - 1) else 1.0
+        
+        integral_ii += weight * np.outer(qmc[i], q_value - pi) * f[i]
+        integral_ij += -weight * np.outer(qmc[i], q_value - p_neigh) * f[i]
 
     return integral_ii * normRatio, integral_ij * normRatio
 
