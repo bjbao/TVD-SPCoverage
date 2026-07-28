@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools >= 61.0"]
-build-backend = "setuptools.build_meta" 
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "tvd_coverage"
@@ -14,16 +14,16 @@ dependencies = [
   "legacy-quadpy >= 0.16.10",
   "tqdm >= 4.65.0"
 ]
-requires-python = ">= 3.11"
+requires-python = ">= 3.11, < 3.14"
 authors = [
   {name = "Brandon Bao"},
 ]
 description = "Singular Perturbation Coverage Control Paper Code."
 readme = "README.md"
-license-files = ["LICENSE", "THIRDPARTY-LICENSES"]
+license-files = ["LICENSE*"]
 
 [project.urls]
 Repository = "https://github.com/bjbao/TVD-SPCoverage"
 
 [tool.setuptools]
-packages = ["pycoverage_robotarium", "pycoverage3d"]
+packages = ["pycoverage_robotarium", "pycoverage2d"]
